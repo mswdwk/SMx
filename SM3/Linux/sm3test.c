@@ -8,9 +8,25 @@
 #include <stdio.h>
 #include "sm3.h"
 
+void test_rotl(int a,int n){
+#define  SHL(x,n) (((x) & 0xFFFFFFFF) << n)
+#define ROTL(x,n) (SHL((x),n) | ((x) >> (32 - n)))
+int b = ROTL(a,n);
+printf("%08X\n",b);
+}
+
 int main( int argc, char *argv[] )
 {
-	unsigned char *input = "abc";
+    /* Attention! Type long is 8 Bytes on Linux 64, 4 Bytes on Linux 32 !
+     * We should use unsigned int !                 */
+	printf("sizeof(long)=%zu\n",sizeof(long));
+	//test_rotl(0b12345678,1);
+	test_rotl(0x12345678,4);
+	test_rotl(0x12345678,32);
+	//test_rotl(0x12345678,-1);
+	test_rotl(0x12345678,-32);
+    printf("\n---***---***---\n");
+	unsigned char *input = (unsigned char*)"abc";
 	int ilen = 3;
 	unsigned char output[32];
 	int i;
@@ -35,7 +51,7 @@ int main( int argc, char *argv[] )
 
 	sm3_starts( &ctx );
 	for (i = 0; i < 16; i++)
-		sm3_update( &ctx, "abcd", 4 );
+		sm3_update( &ctx, (unsigned char*)"abcd", 4 );
 	sm3_finish( &ctx, output );
 	memset( &ctx, 0, sizeof( sm3_context ) );
 
@@ -46,5 +62,5 @@ int main( int argc, char *argv[] )
 		if (((i + 1) % 4 ) == 0) printf(" ");
 	}
 	printf("\n");
-	//getch();	//VS2008
+	return 0;
 }

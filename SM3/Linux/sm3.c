@@ -25,10 +25,10 @@
 #ifndef GET_ULONG_BE
 #define GET_ULONG_BE(n,b,i)                             \
 {                                                       \
-    (n) = ( (unsigned long) (b)[(i)    ] << 24 )        \
-        | ( (unsigned long) (b)[(i) + 1] << 16 )        \
-        | ( (unsigned long) (b)[(i) + 2] <<  8 )        \
-        | ( (unsigned long) (b)[(i) + 3]       );       \
+    (n) = ( (unsigned int) (b)[(i)    ] << 24 )        \
+        | ( (unsigned int) (b)[(i) + 1] << 16 )        \
+        | ( (unsigned int) (b)[(i) + 2] <<  8 )        \
+        | ( (unsigned int) (b)[(i) + 3]       );       \
 }
 #endif
 
@@ -63,10 +63,12 @@ void sm3_starts( sm3_context *ctx )
 
 static void sm3_process( sm3_context *ctx, unsigned char data[64] )
 {
-    unsigned long SS1, SS2, TT1, TT2, W[68], W1[64];
-    unsigned long A, B, C, D, E, F, G, H;
-    unsigned long T[64];
-    unsigned long Temp1, Temp2, Temp3, Temp4, Temp5;
+    /* Attention! Type long is 8 Bytes on Linux 64, 4 Bytes on Linux 32!
+     * We should use unsigned int !                 */
+    unsigned int SS1, SS2, TT1, TT2, W[68], W1[64];
+    unsigned int A, B, C, D, E, F, G, H;
+    unsigned int T[64];
+    unsigned int Temp1, Temp2, Temp3, Temp4, Temp5;
     int j;
 #ifdef _DEBUG
     int i;
@@ -82,9 +84,9 @@ static void sm3_process( sm3_context *ctx, unsigned char data[64] )
     for (j = 16; j < 64; j++)
         T[j] = 0x7A879D8A;
 
-    GET_ULONG_BE( W[ 0], data,  0 );
-    GET_ULONG_BE( W[ 1], data,  4 );
-    GET_ULONG_BE( W[ 2], data,  8 );
+    GET_ULONG_BE( W[ 0], data, 0 );
+    GET_ULONG_BE( W[ 1], data, 4 );
+    GET_ULONG_BE( W[ 2], data, 8 );
     GET_ULONG_BE( W[ 3], data, 12 );
     GET_ULONG_BE( W[ 4], data, 16 );
     GET_ULONG_BE( W[ 5], data, 20 );
@@ -127,12 +129,13 @@ static void sm3_process( sm3_context *ctx, unsigned char data[64] )
         //W[j] = P1( W[j-16] ^ W[j-9] ^ ROTL(W[j-3],15)) ^ ROTL(W[j - 13],7 ) ^ W[j-6];
         //Why thd release's result is different with the debug's ?
         //Below is okay. Interesting, Perhaps VC6 has a bug of Optimizaiton.
-
+        
+        // __sync_synchronize();
         Temp1 = W[j - 16] ^ W[j - 9];
         Temp2 = ROTL(W[j - 3], 15);
         Temp3 = Temp1 ^ Temp2;
         Temp4 = P1(Temp3);
-        Temp5 =  ROTL(W[j - 13], 7 ) ^ W[j - 6];
+        Temp5 = ROTL(W[j - 13], 7 ) ^ W[j - 6];
         W[j] = Temp4 ^ Temp5;
     }
 
@@ -232,8 +235,9 @@ static void sm3_process( sm3_context *ctx, unsigned char data[64] )
 void sm3_update( sm3_context *ctx, unsigned char *input, int ilen )
 {
     int fill;
-    unsigned long left;
-
+    unsigned int left;
+    // unsigned char *pinput = input;
+    
     if ( ilen <= 0 )
         return;
 
@@ -243,7 +247,7 @@ void sm3_update( sm3_context *ctx, unsigned char *input, int ilen )
     ctx->total[0] += ilen;
     ctx->total[0] &= 0xFFFFFFFF;
 
-    if ( ctx->total[0] < (unsigned long) ilen )
+    if ( ctx->total[0] < (unsigned int) ilen )
         ctx->total[1]++;
 
     if ( left && ilen >= fill )
@@ -283,8 +287,8 @@ static const unsigned char sm3_padding[64] =
  */
 void sm3_finish( sm3_context *ctx, unsigned char output[32] )
 {
-    unsigned long last, padn;
-    unsigned long high, low;
+    unsigned int last, padn;
+    unsigned int high, low;
     unsigned char msglen[8];
 
     high = ( ctx->total[0] >> 29 )
