@@ -14,6 +14,16 @@ void test_rotl(int a,int n){
 int b = ROTL(a,n);
 printf("%08X\n",b);
 }
+void dump_sm3_hash(unsigned char output[32]) {
+	int i;
+	printf("Hash:\n   ");
+	for (i = 0; i < 32; i++)
+	{
+		printf("%02x", output[i]);
+		if (((i + 1) % 4 ) == 0) printf(" ");
+	}
+	printf("\n");
+}
 
 int main( int argc, char *argv[] )
 {
@@ -25,7 +35,7 @@ int main( int argc, char *argv[] )
 	test_rotl(0x12345678,32);
 	//test_rotl(0x12345678,-1);
 	test_rotl(0x12345678,-32);
-    printf("\n---***---***---\n");
+        printf("\n---***---***---\n");
 	unsigned char *input = (unsigned char*)"abc";
 	int ilen = 3;
 	unsigned char output[32];
@@ -34,15 +44,20 @@ int main( int argc, char *argv[] )
 
 	printf("Message:\n");
 	printf("%s\n", input);
-
 	sm3(input, ilen, output);
-	printf("Hash:\n   ");
+        dump_sm3_hash(output);
+        
+	printf("Message:\n");
+	printf("%s\n", output);
+	sm3(output, sizeof(output), output);
+        dump_sm3_hash(output);
+	/*printf("Hash:\n   ");
 	for (i = 0; i < 32; i++)
 	{
 		printf("%02x", output[i]);
 		if (((i + 1) % 4 ) == 0) printf(" ");
 	}
-	printf("\n");
+	printf("\n");*/
 
 	printf("Message:\n");
 	for (i = 0; i < 16; i++)
